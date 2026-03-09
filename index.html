@@ -64,6 +64,35 @@
       border-radius: 8px;
       opacity: 0.3;
       /* 눈에 덜 띄게 흐리게 처리 */
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: none;
+      /* prevent default touch actions like scroll */
+    }
+
+    /* 진행률 바를 나타내는 가상 요소 */
+    .researcher-btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      width: 0%;
+      background-color: #28a745;
+      /* 초록색 */
+      z-index: 1;
+      /* 글자 뒤에 오도록 */
+      transition: width 0s linear;
+      /* 기본적으로는 애니메이션 없음 (js에서 제어) */
+    }
+
+    /* 버튼 안의 텍스트가 바 위에 보이도록 z-index 설정 */
+    .researcher-btn span {
+      position: relative;
+      z-index: 2;
     }
 
     .highlight {
@@ -121,12 +150,70 @@
 
   schedule.forEach(function (item) {
 
-    // 연구자가 타이밍에 맞춰 누르는 대기 화면
+    // 연구자가 타이밍에 맞춰 누르는 대기 화면 (2초 길게 누르기)
     const wait_screen = {
-      type: jsPsychHtmlButtonResponse,
-      stimulus: `<p style="font-size: 24px; color: #888;">다음 측정 대기 중...</p><p style="font-size: 40px;">${item.time} 측정</p>`,
-      choices: ['시작 (연구자용)'],
-      button_html: '<button class="researcher-btn">%choice%</button>'
+      type: jsPsychHtmlKeyboardResponse, // buttonResponse 대신 keyboardResponse 사용 (직접 제어하기 위함)
+      stimulus: `
+        <p style="font-size: 24px; color: #888;">다음 측정 대기 중...</p>
+        <p style="font-size: 40px;">${item.time} 측정</p>
+        <button id="long-press-btn" class="researcher-btn"><span>시작</span></button>
+      `,
+      choices: "NO_KEYS", // 키보드 응답 비활성화
+      on_load: function () {
+        const btn = document.getElementById('long-press-btn');
+        let pressTimer;
+        let isPressing = false;
+        const requiredTime = 2000; // 2초
+
+        function startPress(e) {
+          if (e.type === 'touchstart') e.preventDefault(); // 기본 터치 동작 방지
+          if (isPressing) return;
+          isPressing = true;
+
+          // CSS transition을 2초로 설정하여 진행률 바 애니메이션 시작
+          btn.style.setProperty('--btn-before-transition', `width ${requiredTime}ms linear`);
+          btn.style.setProperty('outline', 'none');
+
+          // 약간의 딜레이를 주어 transition이 적용된 후 width를 변경하도록 함
+          requestAnimationFrame(() => {
+            const beforeStyle = document.createElement('style');
+            beforeStyle.id = 'dynamic-progress-style';
+            beforeStyle.innerHTML = `
+              .researcher-btn::before {
+                transition: width ${requiredTime}ms linear !important;
+                width: 100% !important;
+              }
+            `;
+            document.head.appendChild(beforeStyle);
+          });
+
+          pressTimer = setTimeout(() => {
+            // 2초 도달 시 jsPsych 다음 단계로 진행
+            jsPsych.finishTrial();
+          }, requiredTime);
+        }
+
+        function endPress(e) {
+          if (e && e.type === 'touchend') e.preventDefault();
+          isPressing = false;
+          clearTimeout(pressTimer);
+
+          // 스타일 제거하여 진행률 바 초기화
+          const dynamicStyle = document.getElementById('dynamic-progress-style');
+          if (dynamicStyle) {
+            dynamicStyle.remove();
+          }
+        }
+
+        // 터치 및 마우스 이벤트 리스너 추가
+        btn.addEventListener('mousedown', startPress);
+        btn.addEventListener('touchstart', startPress, { passive: false });
+
+        btn.addEventListener('mouseup', endPress);
+        btn.addEventListener('mouseleave', endPress);
+        btn.addEventListener('touchend', endPress);
+        btn.addEventListener('touchcancel', endPress);
+      }
     };
     timeline.push(wait_screen);
 
