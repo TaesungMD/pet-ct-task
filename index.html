@@ -115,7 +115,29 @@
 <script>
   const jsPsych = initJsPsych({
     on_finish: function () {
-      const csvData = jsPsych.data.get().csv();
+      // 1. 필요한 데이터만 필터링 (phase가 있는 경우만 유효한 측정 데이터로 간주)
+      const rawData = jsPsych.data.get().filterCustom(function (trial) {
+        return trial.phase !== undefined;
+      });
+
+      // 2. 보고서에 넣을 형태로 가공 (reaction time 등 불필요한 정보 제거)
+      const filteredData = rawData.map(function (trial) {
+        // cue 프라이밍 시에는 question이 없고 task만 있으므로 처리
+        const measureType = trial.question ? trial.question : trial.task;
+
+        return {
+          phase: trial.phase,
+          measure: measureType,
+          response: trial.response
+        };
+      });
+
+      // 3. 가공된 데이터를 CSV 형식 문자열로 변환
+      let csvData = "phase,measure,response\n"; // CSV 헤더
+      filteredData.forEach(function (row) {
+        csvData += `"${row.phase}","${row.measure}","${row.response}"\n`;
+      });
+
       const googleSheetUrl = 'https://script.google.com/macros/s/AKfycbzVyqXLhMR9hdEOwqFSDNRkRjT2aZqdf3EP0E2em1Qt_KSKQTGuEy6hTm7F5dPjhhGZ/exec';
 
       fetch(googleSheetUrl, {
