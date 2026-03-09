@@ -4,7 +4,8 @@
     <title>PET CT VAS Task (Test)</title>
     <script src="https://unpkg.com/jspsych@7.3.4"></script>
     <script src="https://unpkg.com/@jspsych/plugin-html-slider-response@1.1.3"></script>
-    <script src="https://unpkg.com/@jspsych/plugin-html-button-response@1.1.3"></script> <script src="https://unpkg.com/@jspsych/plugin-html-keyboard-response@1.1.3"></script>
+    <script src="https://unpkg.com/@jspsych/plugin-html-button-response@1.1.3"></script>
+    <script src="https://unpkg.com/@jspsych/plugin-html-keyboard-response@1.1.3"></script>
     <script src="https://unpkg.com/@jspsych/plugin-fullscreen@1.2.1"></script>
     <link href="https://unpkg.com/jspsych@7.3.4/css/jspsych.css" rel="stylesheet" type="text/css" />
     <style>
@@ -53,8 +54,27 @@
   <script>
     const jsPsych = initJsPsych({
       on_finish: function() {
-        // 테스트용이므로 파일명을 test로 변경
-        jsPsych.data.get().localSave('csv', 'vas_data_test.csv');
+        // 1. jsPsych에 쌓인 데이터를 CSV 형태의 텍스트로 추출
+        const csvData = jsPsych.data.get().csv();
+        
+        // 2. 알려주신 구글 웹 앱 URL로 데이터 전송
+        const googleSheetUrl = 'https://script.google.com/macros/s/AKfycbzVyqXLhMR9hdEOwqFSDNRkRjT2aZqdf3EP0E2em1Qt_KSKQTGuEy6hTm7F5dPjhhGZ/exec';
+        
+        fetch(googleSheetUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'text/plain;charset=utf-8',
+          },
+          body: csvData
+        })
+        .then(response => {
+          // 전송 완료 후 화면에 메시지 표시
+          document.body.innerHTML = '<p style="font-size:40px; text-align:center; margin-top:20%; color:#28a745;">데이터가 서버로 안전하게 전송되었습니다.<br>수고하셨습니다.</p>';
+        })
+        .catch(error => {
+          // 에러 발생 시
+          document.body.innerHTML = '<p style="font-size:40px; text-align:center; margin-top:20%; color:#dc3545;">데이터 전송에 실패했습니다. 연구자에게 알려주세요.</p>';
+        });
       }
     });
 
@@ -74,7 +94,7 @@
 
     for (let i = 0; i < total_trials; i++) {
       
-      // 1. Cue priming 지시문 (대기 없이 다음 버튼 누르면 넘어감)
+      // 1. Cue priming 지시문
       const cue_trial = {
         type: jsPsychHtmlButtonResponse,
         stimulus: '<p class="highlight">Cue priming</p><p>1분 후에 맛있는 ‘초코우유’를<br>먹는다고 상상해보세요.</p>',
