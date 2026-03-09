@@ -1,24 +1,31 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>PET CT VAS Task (Test)</title>
+    <title>PET CT VAS Task</title>
     <script src="https://unpkg.com/jspsych@7.3.4"></script>
     <script src="https://unpkg.com/@jspsych/plugin-html-slider-response@1.1.3"></script>
     <script src="https://unpkg.com/@jspsych/plugin-html-button-response@1.1.3"></script>
     <script src="https://unpkg.com/@jspsych/plugin-html-keyboard-response@1.1.3"></script>
     <link href="https://unpkg.com/jspsych@7.3.4/css/jspsych.css" rel="stylesheet" type="text/css" />
     <style>
-      /* 누운 상태에서도 잘 보이고 터치하기 쉽도록 UI 크기 대폭 확대 */
+      /* 아이패드 제스처 및 텍스트 선택 방지 */
+      body {
+        overscroll-behavior-y: none;
+        -webkit-user-select: none;
+        user-select: none;
+        -webkit-touch-callout: none;
+      }
+      
       .jspsych-content {
         font-size: 30px;
         line-height: 1.5;
       }
-      /* 슬라이더 트랙 두께 설정 */
+      
       input[type=range] {
         height: 20px;
         width: 100%;
       }
-      /* 슬라이더 손잡이(Thumb) 크기 확대 - iOS Safari 터치 최적화 */
+      
       input[type=range]::-webkit-slider-thumb {
         width: 60px;
         height: 60px;
@@ -28,24 +35,47 @@
         -webkit-appearance: none;
         margin-top: -20px;
       }
+      
       .jspsych-html-slider-response-container {
-        width: 800px; /* 아이패드 가로 모드 시야각에 맞게 설정 */
+        width: 800px; 
         margin: auto;
       }
+      
       #slider-labels {
         font-size: 25px;
         margin-top: 30px;
       }
-      /* 다음 버튼 크기 확대 */
+      
       .jspsych-btn {
         font-size: 26px;
         padding: 15px 35px;
         margin-top: 40px;
         border-radius: 10px;
       }
-      /* 강조 텍스트 색상 */
+      
+      /* 연구자 전용 대기 화면 버튼 스타일 */
+      .researcher-btn {
+        font-size: 20px;
+        padding: 15px 30px;
+        background-color: #6c757d;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        opacity: 0.3; /* 눈에 덜 띄게 흐리게 처리 */
+      }
+      
       .highlight {
         color: #d9534f;
+      }
+
+      /* 큐 프라이밍 이미지 스타일 */
+      .cue-image {
+        width: 500px;
+        height: auto;
+        border-radius: 15px;
+        margin-top: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0px 4px 10px rgba(0,0,0,0.1);
       }
     </style>
   </head>
@@ -53,77 +83,97 @@
   <script>
     const jsPsych = initJsPsych({
       on_finish: function() {
-        // 1. jsPsych에 쌓인 데이터를 CSV 형태의 텍스트로 추출
         const csvData = jsPsych.data.get().csv();
-        
-        // 2. 알려주신 구글 웹 앱 URL로 데이터 전송
         const googleSheetUrl = 'https://script.google.com/macros/s/AKfycbzVyqXLhMR9hdEOwqFSDNRkRjT2aZqdf3EP0E2em1Qt_KSKQTGuEy6hTm7F5dPjhhGZ/exec';
         
         fetch(googleSheetUrl, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'text/plain;charset=utf-8',
-          },
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: csvData
         })
         .then(response => {
-          // 전송 완료 후 화면에 메시지 표시
-          document.body.innerHTML = '<p style="font-size:40px; text-align:center; margin-top:20%; color:#28a745;">데이터가 서버로 안전하게 전송되었습니다.<br>수고하셨습니다.</p>';
+          document.body.innerHTML = '<p style="font-size:40px; text-align:center; margin-top:20%; color:#28a745;">데이터 전송 완료<br>모든 측정이 종료되었습니다.</p>';
         })
         .catch(error => {
-          // 에러 발생 시
-          document.body.innerHTML = '<p style="font-size:40px; text-align:center; margin-top:20%; color:#dc3545;">데이터 전송에 실패했습니다. 연구자에게 알려주세요.</p>';
+          document.body.innerHTML = '<p style="font-size:40px; text-align:center; margin-top:20%; color:#dc3545;">데이터 전송 실패<br>오프라인 상태인지 확인하세요.</p>';
         });
       }
     });
 
     const timeline = [];
 
+    // 전체 스케줄 정의 (10분~90분)
+    const schedule = [
+      { time: "10분", type: "q" }, { time: "20분", type: "q" }, 
+      { time: "30분", type: "q" }, { time: "40분", type: "q" }, 
+      { time: "49분", type: "q" },
+      { time: "50분", type: "cue" },
+      { time: "51분 (음료 등장 직후)", type: "q" },
+      { time: "54분", type: "q" }, { time: "57분", type: "q" }, 
+      { time: "60분 (섭식 종료)", type: "q" },
+      { time: "65분", type: "q" }, { time: "70분", type: "q" }, 
+      { time: "75분", type: "q" }, { time: "80분", type: "q" }, 
+      { time: "85분", type: "q" }, { time: "90분", type: "q" }
+    ];
 
-    // 측정 횟수 설정
-    const total_trials = 5; 
-
-    for (let i = 0; i < total_trials; i++) {
+    schedule.forEach(function(item) {
       
-      // 1. Cue priming 지시문
-      const cue_trial = {
+      // 연구자가 타이밍에 맞춰 누르는 대기 화면
+      const wait_screen = {
         type: jsPsychHtmlButtonResponse,
-        stimulus: '<p class="highlight">Cue priming</p><p>1분 후에 맛있는 ‘초코우유’를<br>먹는다고 상상해보세요.</p>',
-        choices: ['다음'],
-        button_html: '<button class="jspsych-btn">%choice%</button>'
+        stimulus: `<p style="font-size: 24px; color: #888;">다음 측정 대기 중...</p><p style="font-size: 40px;">${item.time} 측정</p>`,
+        choices: ['시작 (연구자용)'],
+        button_html: '<button class="researcher-btn">%choice%</button>'
       };
-      timeline.push(cue_trial);
+      timeline.push(wait_screen);
 
-      // 2. Liking 질문 슬라이더
-      const liking_trial = {
-        type: jsPsychHtmlSliderResponse,
-        stimulus: `<p style="margin-bottom: 50px;"><span class="highlight">Liking</span><br>지금 초코 우유를 마신다면, 맛이 얼마나 좋을 것으로 예상하나요? (${i+1}/${total_trials})</p>`,
-        labels: ['전혀 안 좋을 것이다 (0)', '매우 좋을 것이다 (100)'],
-        min: 0,
-        max: 100,
-        start: 50, 
-        step: 1,
-        button_label: '제출 및 다음',
-        require_movement: true 
-      };
-      timeline.push(liking_trial);
+      if (item.type === "cue") {
+        // 50분 큐 프라이밍 화면 (시각적 자극 포함)
+        const cue_trial = {
+          type: jsPsychHtmlButtonResponse,
+          stimulus: `
+            <p class="highlight">Cue priming</p>
+            <p>1분 후에 맛있는 ‘초코우유’를 먹는다고 상상해보세요.</p>
+            <img src="https://images.unsplash.com/photo-1550617931-e17a7b70dce2?w=800" class="cue-image" alt="초코우유 이미지">
+          `,
+          choices: ['다음'],
+          button_html: '<button class="jspsych-btn">%choice%</button>',
+          data: { phase: item.time, task: "cue_priming" }
+        };
+        timeline.push(cue_trial);
+      } else {
+        // Liking 문항 (1-10 척도)
+        const liking_trial = {
+          type: jsPsychHtmlSliderResponse,
+          stimulus: `<p style="margin-bottom: 50px;"><span class="highlight">Liking</span><br>지금 초코 우유를 마신다면, 맛이 얼마나 좋을 것으로 예상하나요?</p>`,
+          labels: ['1<br>(전혀 안 좋을 것이다)', '10<br>(매우 좋을 것이다)'],
+          min: 1,
+          max: 10,
+          start: 5, 
+          step: 1,
+          button_label: '제출 및 다음',
+          require_movement: true,
+          data: { phase: item.time, question: "Liking" }
+        };
+        timeline.push(liking_trial);
 
-      // 3. Wanting 질문 슬라이더
-      const wanting_trial = {
-        type: jsPsychHtmlSliderResponse,
-        stimulus: `<p style="margin-bottom: 50px;"><span class="highlight">Wanting</span><br>지금 ‘초코우유’를 얼마나 마시고 싶은가요? (${i+1}/${total_trials})</p>`,
-        labels: ['전혀 마시고 싶지 않다 (0)', '매우 마시고 싶다 (100)'],
-        min: 0,
-        max: 100,
-        start: 50, 
-        step: 1,
-        button_label: '제출 및 다음',
-        require_movement: true 
-      };
-      timeline.push(wanting_trial);
-    }
+        // Wanting 문항 (1-10 척도)
+        const wanting_trial = {
+          type: jsPsychHtmlSliderResponse,
+          stimulus: `<p style="margin-bottom: 50px;"><span class="highlight">Wanting</span><br>지금 ‘초코우유’를 얼마나 마시고 싶은가요?</p>`,
+          labels: ['1<br>(전혀 마시고 싶지 않다)', '10<br>(매우 마시고 싶다)'],
+          min: 1,
+          max: 10,
+          start: 5, 
+          step: 1,
+          button_label: '제출 및 다음',
+          require_movement: true,
+          data: { phase: item.time, question: "Wanting" }
+        };
+        timeline.push(wanting_trial);
+      }
+    });
 
     jsPsych.run(timeline);
   </script>
 </html>
-
