@@ -112,9 +112,24 @@
 </head>
 
 <body></body>
+<script src="https://unpkg.com/@jspsych/plugin-survey-html-form@1.0.3"></script>
 <script>
   const jsPsych = initJsPsych({
     on_finish: function () {
+      // 시작 시 입력받은 피험자 정보 추출
+      const surveyData = jsPsych.data.get().filter({ task: 'participant_info' }).values()[0].response;
+      const participantId = surveyData.participant_id;
+      const sessionType = surveyData.session_type;
+
+      // 현재 시간을 yyyy-mm-dd hh:mm:ss 형태로 저장 (타임스탬프)
+      const now = new Date();
+      const timestamp = now.getFullYear() + '-' +
+        String(now.getMonth() + 1).padStart(2, '0') + '-' +
+        String(now.getDate()).padStart(2, '0') + ' ' +
+        String(now.getHours()).padStart(2, '0') + ':' +
+        String(now.getMinutes()).padStart(2, '0') + ':' +
+        String(now.getSeconds()).padStart(2, '0');
+
       // 1. 필요한 데이터만 필터링 (phase가 있는 경우만 유효한 측정 데이터로 간주)
       // jsPsych의 DataCollection 객체를 일반 배열로 변환하기 위해 .values() 사용
       const rawData = jsPsych.data.get().filterCustom(function (trial) {
@@ -127,16 +142,19 @@
         const measureType = trial.question ? trial.question : trial.task;
 
         return {
+          id: participantId,
+          session: sessionType,
           phase: trial.phase,
           measure: measureType,
-          response: trial.response
+          response: trial.response,
+          timestamp: timestamp
         };
       });
 
-      // 3. 가공된 데이터를 CSV 형식 문자열로 변환
-      let csvData = "phase,measure,response\n"; // CSV 헤더
+      // 3. 가공된 데이터를 CSV 형식 문자열로 변환 (헤더에 컬럼 추가)
+      let csvData = "id,session,phase,measure,response,timestamp\n";
       filteredData.forEach(function (row) {
-        csvData += `"${row.phase}","${row.measure}","${row.response}"\n`;
+        csvData += `"${row.id}","${row.session}","${row.phase}","${row.measure}","${row.response}","${row.timestamp}"\n`;
       });
 
       const googleSheetUrl = 'https://script.google.com/macros/s/AKfycbzVyqXLhMR9hdEOwqFSDNRkRjT2aZqdf3EP0E2em1Qt_KSKQTGuEy6hTm7F5dPjhhGZ/exec';
@@ -156,6 +174,27 @@
   });
 
   const timeline = [];
+
+  // 실험 시작 전 정보 입력 화면 (ID 및 Pre/Post)
+  const info_screen = {
+    type: jsPsychSurveyHtmlForm,
+    preamble: '<h3>피험자 정보를 입력하세요</h3>',
+    html: `
+      <div style="text-align: left; margin: auto; width: 400px; font-size: 24px; line-height: 2;">
+        <label for="participant_id">피험자 ID:</label><br>
+        <input type="text" id="participant_id" name="participant_id" required style="font-size: 20px; padding: 5px; width: 100%; margin-bottom: 20px;"><br>
+        
+        <label>세션 구분:</label><br>
+        <input type="radio" id="pre" name="session_type" value="Pre" required>
+        <label for="pre">Pre</label><br>
+        <input type="radio" id="post" name="session_type" value="Post" required>
+        <label for="post">Post</label>
+      </div>
+    `,
+    button_label: '설문 시작하기',
+    data: { task: 'participant_info' }
+  };
+  timeline.push(info_screen);
 
   // 전체 스케줄 정의 (10분~90분)
   const schedule = [
