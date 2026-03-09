@@ -116,9 +116,10 @@
   const jsPsych = initJsPsych({
     on_finish: function () {
       // 1. 필요한 데이터만 필터링 (phase가 있는 경우만 유효한 측정 데이터로 간주)
+      // jsPsych의 DataCollection 객체를 일반 배열로 변환하기 위해 .values() 사용
       const rawData = jsPsych.data.get().filterCustom(function (trial) {
         return trial.phase !== undefined;
-      });
+      }).values();
 
       // 2. 보고서에 넣을 형태로 가공 (reaction time 등 불필요한 정보 제거)
       const filteredData = rawData.map(function (trial) {
