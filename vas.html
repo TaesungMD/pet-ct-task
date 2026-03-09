@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>PET CT VAS Task (Test)</title>
+    <script src="https://unpkg.com/jspsych@7.3.4"></script>
+    <script src="https://unpkg.com/@jspsych/plugin-html-slider-response@1.1.3"></script>
+    <script src="https://unpkg.com/@jspsych/plugin-html-button-response@1.1.3"></script> <script src="https://unpkg.com/@jspsych/plugin-html-keyboard-response@1.1.3"></script>
+    <script src="https://unpkg.com/@jspsych/plugin-fullscreen@1.2.1"></script>
+    <link href="https://unpkg.com/jspsych@7.3.4/css/jspsych.css" rel="stylesheet" type="text/css" />
+    <style>
+      /* 누운 상태에서도 잘 보이고 터치하기 쉽도록 UI 크기 대폭 확대 */
+      .jspsych-content {
+        font-size: 30px;
+        line-height: 1.5;
+      }
+      /* 슬라이더 트랙 두께 설정 */
+      input[type=range] {
+        height: 20px;
+        width: 100%;
+      }
+      /* 슬라이더 손잡이(Thumb) 크기 확대 - iOS Safari 터치 최적화 */
+      input[type=range]::-webkit-slider-thumb {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: #007bff;
+        cursor: pointer;
+        -webkit-appearance: none;
+        margin-top: -20px;
+      }
+      .jspsych-html-slider-response-container {
+        width: 800px; /* 아이패드 가로 모드 시야각에 맞게 설정 */
+        margin: auto;
+      }
+      #slider-labels {
+        font-size: 25px;
+        margin-top: 30px;
+      }
+      /* 다음 버튼 크기 확대 */
+      .jspsych-btn {
+        font-size: 26px;
+        padding: 15px 35px;
+        margin-top: 40px;
+        border-radius: 10px;
+      }
+      /* 강조 텍스트 색상 */
+      .highlight {
+        color: #d9534f;
+      }
+    </style>
+  </head>
+  <body></body>
+  <script>
+    const jsPsych = initJsPsych({
+      on_finish: function() {
+        // 테스트용이므로 파일명을 test로 변경
+        jsPsych.data.get().localSave('csv', 'vas_data_test.csv');
+      }
+    });
+
+    const timeline = [];
+
+    // 전체 화면 모드 진입 (아이패드 Safari에서 주소창 숨김)
+    const enter_fullscreen = {
+      type: jsPsychFullscreen,
+      fullscreen_mode: true,
+      message: '<p>화면을 터치하면 테스트가 시작됩니다.</p>',
+      button_label: '시작'
+    };
+    timeline.push(enter_fullscreen);
+
+    // 측정 횟수 설정
+    const total_trials = 5; 
+
+    for (let i = 0; i < total_trials; i++) {
+      
+      // 1. Cue priming 지시문 (대기 없이 다음 버튼 누르면 넘어감)
+      const cue_trial = {
+        type: jsPsychHtmlButtonResponse,
+        stimulus: '<p class="highlight">Cue priming</p><p>1분 후에 맛있는 ‘초코우유’를<br>먹는다고 상상해보세요.</p>',
+        choices: ['다음'],
+        button_html: '<button class="jspsych-btn">%choice%</button>'
+      };
+      timeline.push(cue_trial);
+
+      // 2. Liking 질문 슬라이더
+      const liking_trial = {
+        type: jsPsychHtmlSliderResponse,
+        stimulus: `<p style="margin-bottom: 50px;"><span class="highlight">Liking</span><br>지금 초코 우유를 마신다면, 맛이 얼마나 좋을 것으로 예상하나요? (${i+1}/${total_trials})</p>`,
+        labels: ['전혀 안 좋을 것이다 (0)', '매우 좋을 것이다 (100)'],
+        min: 0,
+        max: 100,
+        start: 50, 
+        step: 1,
+        button_label: '제출 및 다음',
+        require_movement: true 
+      };
+      timeline.push(liking_trial);
+
+      // 3. Wanting 질문 슬라이더
+      const wanting_trial = {
+        type: jsPsychHtmlSliderResponse,
+        stimulus: `<p style="margin-bottom: 50px;"><span class="highlight">Wanting</span><br>지금 ‘초코우유’를 얼마나 마시고 싶은가요? (${i+1}/${total_trials})</p>`,
+        labels: ['전혀 마시고 싶지 않다 (0)', '매우 마시고 싶다 (100)'],
+        min: 0,
+        max: 100,
+        start: 50, 
+        step: 1,
+        button_label: '제출 및 다음',
+        require_movement: true 
+      };
+      timeline.push(wanting_trial);
+    }
+
+    jsPsych.run(timeline);
+  </script>
+</html>
