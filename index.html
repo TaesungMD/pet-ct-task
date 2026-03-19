@@ -176,15 +176,6 @@
 
   const timeline = [];
 
-  // 전체 화면 모드 전환
-  const enter_fullscreen = {
-    type: jsPsychFullscreen,
-    fullscreen_mode: true,
-    message: '<p style="font-size: 24px; margin-bottom: 20px;">실험의 정확한 진행을 위해 전체 화면으로 전환합니다.</p>',
-    button_label: '전체 화면으로 전환'
-  };
-  timeline.push(enter_fullscreen);
-
   // 실험 시작 전 정보 입력 화면 (ID 및 Pre/Post)
   const info_screen = {
     type: jsPsychSurveyHtmlForm,
@@ -201,10 +192,19 @@
         <label for="post">Post</label>
       </div>
     `,
-    button_label: '설문 시작하기',
+    button_label: '다음',
     data: { task: 'participant_info' }
   };
   timeline.push(info_screen);
+
+  // 전체 화면 모드 전환
+  const enter_fullscreen = {
+    type: jsPsychFullscreen,
+    fullscreen_mode: true,
+    message: '<p style="font-size: 24px; margin-bottom: 20px;">실험의 정확한 진행을 위해 전체 화면으로 전환합니다.</p>',
+    button_label: '전체 화면으로 전환 및 시작하기'
+  };
+  timeline.push(enter_fullscreen);
 
   // 전체 스케줄 정의 (10분~90분)
   const schedule = [
