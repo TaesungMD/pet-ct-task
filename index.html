@@ -7,25 +7,27 @@
   <script src="https://unpkg.com/@jspsych/plugin-html-slider-response@1.1.3"></script>
   <script src="https://unpkg.com/@jspsych/plugin-html-button-response@1.1.3"></script>
   <script src="https://unpkg.com/@jspsych/plugin-html-keyboard-response@1.1.3"></script>
-  <script src="https://unpkg.com/@jspsych/plugin-fullscreen@1.2.1"></script>
   <link href="https://unpkg.com/jspsych@7.3.4/css/jspsych.css" rel="stylesheet" type="text/css" />
   <style>
     /* 아이패드 제스처 및 텍스트 선택 방지 */
-    html, body {
+    html,
+    body {
       width: 100%;
       height: 100%;
       margin: 0;
       padding: 0;
-      overflow: hidden; /* 페이지 자체의 스크롤을 막아 새로고침 방지 */
+      overflow: hidden;
+      /* 페이지 자체의 스크롤을 막아 새로고침 방지 */
       overscroll-behavior-y: none;
       -webkit-user-select: none;
       user-select: none;
       -webkit-touch-callout: none;
-      touch-action: pan-x pan-y; /* 핀치 줌 방지 */
+      touch-action: pan-x pan-y;
+      /* 핀치 줌 방지 */
     }
 
     .jspsych-content {
-      font-size: 30px;
+      font-size: 45px;
       line-height: 1.5;
     }
 
@@ -35,13 +37,13 @@
     }
 
     input[type=range]::-webkit-slider-thumb {
-      width: 60px;
-      height: 60px;
+      width: 80px;
+      height: 80px;
       border-radius: 50%;
       background: #007bff;
       cursor: pointer;
       -webkit-appearance: none;
-      margin-top: -20px;
+      margin-top: -30px;
     }
 
     .jspsych-html-slider-response-container {
@@ -50,21 +52,21 @@
     }
 
     #slider-labels {
-      font-size: 25px;
+      font-size: 32px;
       margin-top: 30px;
     }
 
     .jspsych-btn {
-      font-size: 26px;
-      padding: 15px 35px;
-      margin-top: 40px;
-      border-radius: 10px;
+      font-size: 32px;
+      padding: 20px 45px;
+      margin-top: 50px;
+      border-radius: 15px;
     }
 
     /* 연구자 전용 대기 화면 버튼 스타일 */
     .researcher-btn {
-      font-size: 20px;
-      padding: 15px 30px;
+      font-size: 30px;
+      padding: 20px 40px;
       background-color: #6c757d;
       color: white;
       border: none;
@@ -122,7 +124,7 @@
 <script src="https://unpkg.com/@jspsych/plugin-survey-html-form@1.0.3"></script>
 <script>
   // 아이패드 당기기 새로고침(Pull-to-refresh) 및 화면 흔들림 완벽 방지
-  document.addEventListener('touchmove', function(e) {
+  document.addEventListener('touchmove', function (e) {
     // 슬라이더 바 조작이나, 텍스트 입력 칸 터치 시에는 기본 동작 허용
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
       return;
@@ -195,11 +197,11 @@
   // 실험 시작 전 정보 입력 화면 (ID 및 Pre/Post)
   const info_screen = {
     type: jsPsychSurveyHtmlForm,
-    preamble: '<h3>피험자 정보를 입력하세요</h3>',
+    preamble: '<h1>피험자 정보를 입력하세요</h1>',
     html: `
-      <div style="text-align: left; margin: auto; width: 400px; font-size: 24px; line-height: 2;">
+      <div style="text-align: left; margin: auto; width: 500px; font-size: 35px; line-height: 2;">
         <label for="participant_id">피험자 ID:</label><br>
-        <input type="text" id="participant_id" name="participant_id" required style="font-size: 20px; padding: 5px; width: 100%; margin-bottom: 20px;"><br>
+        <input type="text" id="participant_id" name="participant_id" required style="font-size: 35px; padding: 10px; width: 100%; margin-bottom: 30px;"><br>
         
         <label>세션 구분:</label><br>
         <input type="radio" id="pre" name="session_type" value="Pre" required>
@@ -208,19 +210,10 @@
         <label for="post">Post</label>
       </div>
     `,
-    button_label: '다음',
+    button_label: '설문 시작하기',
     data: { task: 'participant_info' }
   };
   timeline.push(info_screen);
-
-  // 전체 화면 모드 전환
-  const enter_fullscreen = {
-    type: jsPsychFullscreen,
-    fullscreen_mode: true,
-    message: '<p style="font-size: 24px; margin-bottom: 20px;">실험의 정확한 진행을 위해 전체 화면으로 전환합니다.</p>',
-    button_label: '전체 화면으로 전환 및 시작하기'
-  };
-  timeline.push(enter_fullscreen);
 
   // 전체 스케줄 정의 (10분~90분)
   const schedule = [
@@ -243,9 +236,9 @@
       const wait_screen = {
         type: jsPsychHtmlKeyboardResponse, // buttonResponse 대신 keyboardResponse 사용 (직접 제어하기 위함)
         stimulus: `
-          <p style="font-size: 24px; color: #888;">다음 측정 대기 중...</p>
-          <p style="font-size: 40px;">${item.time} 측정</p>
-          <button id="long-press-btn" class="researcher-btn"><span>시작</span></button>
+          <p style="font-size: 35px; color: #888;">다음 측정 대기 중...</p>
+          <p style="font-size: 55px; font-weight: bold; margin-top: 10px; margin-bottom: 50px;">${item.time} 측정</p>
+          <button id="long-press-btn" class="researcher-btn" style="padding: 20px 40px; font-size: 30px;"><span>시작</span></button>
         `,
         choices: "NO_KEYS", // 키보드 응답 비활성화
         on_load: function () {
