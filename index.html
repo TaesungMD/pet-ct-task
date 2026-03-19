@@ -201,7 +201,7 @@
     { time: "10분", type: "q" }, { time: "20분", type: "q" },
     { time: "30분", type: "q" }, { time: "40분", type: "q" },
     { time: "49분", type: "q" },
-    { time: "50분", type: "cue" },
+    { time: "50분", type: "cue", skipWait: true },
     { time: "51분 (음료 등장 직후)", type: "q" },
     { time: "54분", type: "q" }, { time: "57분", type: "q" },
     { time: "60분 (섭식 종료)", type: "q" },
@@ -212,72 +212,74 @@
 
   schedule.forEach(function (item) {
 
-    // 연구자가 타이밍에 맞춰 누르는 대기 화면 (2초 길게 누르기)
-    const wait_screen = {
-      type: jsPsychHtmlKeyboardResponse, // buttonResponse 대신 keyboardResponse 사용 (직접 제어하기 위함)
-      stimulus: `
-        <p style="font-size: 24px; color: #888;">다음 측정 대기 중...</p>
-        <p style="font-size: 40px;">${item.time} 측정</p>
-        <button id="long-press-btn" class="researcher-btn"><span>시작</span></button>
-      `,
-      choices: "NO_KEYS", // 키보드 응답 비활성화
-      on_load: function () {
-        const btn = document.getElementById('long-press-btn');
-        let pressTimer;
-        let isPressing = false;
-        const requiredTime = 1000; // 1초
+    if (!item.skipWait) {
+      // 연구자가 타이밍에 맞춰 누르는 대기 화면 (2초 길게 누르기)
+      const wait_screen = {
+        type: jsPsychHtmlKeyboardResponse, // buttonResponse 대신 keyboardResponse 사용 (직접 제어하기 위함)
+        stimulus: `
+          <p style="font-size: 24px; color: #888;">다음 측정 대기 중...</p>
+          <p style="font-size: 40px;">${item.time} 측정</p>
+          <button id="long-press-btn" class="researcher-btn"><span>시작</span></button>
+        `,
+        choices: "NO_KEYS", // 키보드 응답 비활성화
+        on_load: function () {
+          const btn = document.getElementById('long-press-btn');
+          let pressTimer;
+          let isPressing = false;
+          const requiredTime = 1000; // 1초
 
-        function startPress(e) {
-          if (e.type === 'touchstart') e.preventDefault(); // 기본 터치 동작 방지
-          if (isPressing) return;
-          isPressing = true;
+          function startPress(e) {
+            if (e.type === 'touchstart') e.preventDefault(); // 기본 터치 동작 방지
+            if (isPressing) return;
+            isPressing = true;
 
-          // CSS transition을 2초로 설정하여 진행률 바 애니메이션 시작
-          btn.style.setProperty('--btn-before-transition', `width ${requiredTime}ms linear`);
-          btn.style.setProperty('outline', 'none');
+            // CSS transition을 2초로 설정하여 진행률 바 애니메이션 시작
+            btn.style.setProperty('--btn-before-transition', `width ${requiredTime}ms linear`);
+            btn.style.setProperty('outline', 'none');
 
-          // 약간의 딜레이를 주어 transition이 적용된 후 width를 변경하도록 함
-          requestAnimationFrame(() => {
-            const beforeStyle = document.createElement('style');
-            beforeStyle.id = 'dynamic-progress-style';
-            beforeStyle.innerHTML = `
-              .researcher-btn::before {
-                transition: width ${requiredTime}ms linear !important;
-                width: 100% !important;
-              }
-            `;
-            document.head.appendChild(beforeStyle);
-          });
+            // 약간의 딜레이를 주어 transition이 적용된 후 width를 변경하도록 함
+            requestAnimationFrame(() => {
+              const beforeStyle = document.createElement('style');
+              beforeStyle.id = 'dynamic-progress-style';
+              beforeStyle.innerHTML = `
+                .researcher-btn::before {
+                  transition: width ${requiredTime}ms linear !important;
+                  width: 100% !important;
+                }
+              `;
+              document.head.appendChild(beforeStyle);
+            });
 
-          pressTimer = setTimeout(() => {
-            // 2초 도달 시 jsPsych 다음 단계로 진행
-            jsPsych.finishTrial();
-          }, requiredTime);
-        }
-
-        function endPress(e) {
-          if (e && e.type === 'touchend') e.preventDefault();
-          isPressing = false;
-          clearTimeout(pressTimer);
-
-          // 스타일 제거하여 진행률 바 초기화
-          const dynamicStyle = document.getElementById('dynamic-progress-style');
-          if (dynamicStyle) {
-            dynamicStyle.remove();
+            pressTimer = setTimeout(() => {
+              // 2초 도달 시 jsPsych 다음 단계로 진행
+              jsPsych.finishTrial();
+            }, requiredTime);
           }
+
+          function endPress(e) {
+            if (e && e.type === 'touchend') e.preventDefault();
+            isPressing = false;
+            clearTimeout(pressTimer);
+
+            // 스타일 제거하여 진행률 바 초기화
+            const dynamicStyle = document.getElementById('dynamic-progress-style');
+            if (dynamicStyle) {
+              dynamicStyle.remove();
+            }
+          }
+
+          // 터치 및 마우스 이벤트 리스너 추가
+          btn.addEventListener('mousedown', startPress);
+          btn.addEventListener('touchstart', startPress, { passive: false });
+
+          btn.addEventListener('mouseup', endPress);
+          btn.addEventListener('mouseleave', endPress);
+          btn.addEventListener('touchend', endPress);
+          btn.addEventListener('touchcancel', endPress);
         }
-
-        // 터치 및 마우스 이벤트 리스너 추가
-        btn.addEventListener('mousedown', startPress);
-        btn.addEventListener('touchstart', startPress, { passive: false });
-
-        btn.addEventListener('mouseup', endPress);
-        btn.addEventListener('mouseleave', endPress);
-        btn.addEventListener('touchend', endPress);
-        btn.addEventListener('touchcancel', endPress);
-      }
-    };
-    timeline.push(wait_screen);
+      };
+      timeline.push(wait_screen);
+    }
 
     if (item.type === "cue") {
       // 50분 큐 프라이밍 화면 (시각적 자극 포함)
