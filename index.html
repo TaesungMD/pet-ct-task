@@ -338,13 +338,24 @@
       };
       timeline.push(cue_trial);
     } else {
+      // Liking 문항 텍스트 동적 설정
+      let liking_stimulus = "지금 초코 우유를 마신다면, 맛이 얼마나 좋을 것으로 예상하나요?";
+      let liking_label_left = "(전혀 안 좋을 것이다)";
+      let liking_label_right = "(매우 좋을 것이다)";
+      
+      if (["51분 (음료 등장 직후)", "54분", "57분", "60분 (섭식 종료)"].includes(item.time)) {
+        liking_stimulus = "방금 마신 초코우유가 얼마나 맛있었나요?";
+        liking_label_left = "(전혀 맛이 없었다)";
+        liking_label_right = "(매우 맛있었다)";
+      }
+
       // Liking 문항 (0-100 척도)
       const liking_trial = {
         type: jsPsychHtmlSliderResponse,
-        stimulus: `<p style="margin-bottom: 80px;">지금 초코 우유를 마신다면, 맛이 얼마나 좋을 것으로 예상하나요?</p>`,
+        stimulus: `<p style="margin-bottom: 80px;">${liking_stimulus}</p>`,
         labels: [
-          '<div class="slider-label slider-label-left">0<br><span class="slider-subtext">(전혀 안 좋을 것이다)</span></div>',
-          '<div class="slider-label slider-label-right">100<br><span class="slider-subtext">(매우 좋을 것이다)</span></div>'
+          `<div class="slider-label slider-label-left">0<br><span class="slider-subtext">${liking_label_left}</span></div>`,
+          `<div class="slider-label slider-label-right">100<br><span class="slider-subtext">${liking_label_right}</span></div>`
         ],
         min: 0,
         max: 100,
