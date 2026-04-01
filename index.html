@@ -259,9 +259,11 @@
       const wait_screen = {
         type: jsPsychHtmlKeyboardResponse, // buttonResponse 대신 keyboardResponse 사용 (직접 제어하기 위함)
         stimulus: `
-          <p style="font-size: 45px; color: #888; font-weight: normal;">다음 측정 대기 중...</p>
-          <p style="font-size: 65px; font-weight: bold; margin-top: 20px; margin-bottom: 60px;">${item.time} 측정</p>
-          <button id="long-press-btn" class="researcher-btn" style="padding: 20px 50px; font-size: 40px; font-weight: bold;"><span>시작</span></button>
+          <div style="position: absolute; top: 30%; left: 50%; transform: translate(-50%, -50%); width: 100%; text-align: center;">
+            <p style="font-size: 45px; color: #888; font-weight: normal; margin-top: 0;">다음 측정 대기 중...</p>
+            <p style="font-size: 65px; font-weight: bold; margin-top: 20px; margin-bottom: 60px;">${item.time} 측정</p>
+            <button id="long-press-btn" class="researcher-btn" style="padding: 20px 50px; font-size: 40px; font-weight: bold;"><span>시작</span></button>
+          </div>
         `,
         choices: "NO_KEYS", // 키보드 응답 비활성화
         on_load: function () {
@@ -393,6 +395,25 @@
         data: { phase: item.time, question: "Wanting" }
       };
       timeline.push(wanting_trial);
+
+      // Fullness (배부름 정도) 문항 (0-100 척도)
+      const fullness_trial = {
+        type: jsPsychHtmlSliderResponse,
+        stimulus: '<p style="margin-bottom: 80px;">지금 얼마나 배부르신가요?</p>',
+        labels: [
+          '<div class="slider-label slider-label-left">0<br><span class="slider-subtext">(전혀 배부르지 않다)</span></div>',
+          '<div class="slider-label slider-label-right">100<br><span class="slider-subtext">(매우 배부르다)</span></div>'
+        ],
+        min: 0,
+        max: 100,
+        start: 50,
+        step: 1,
+        slider_width: 520,
+        button_label: '제출 및 다음',
+        require_movement: true,
+        data: { phase: item.time, question: "Fullness" }
+      };
+      timeline.push(fullness_trial);
     }
   });
 
