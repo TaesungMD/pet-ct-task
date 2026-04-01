@@ -178,26 +178,27 @@
         return trial.phase !== undefined;
       }).values();
 
-      // 2. 보고서에 넣을 형태로 가공 (reaction time 등 불필요한 정보 제거)
-      const filteredData = rawData.map(function (trial) {
-        // cue 프라이밍 시에는 question이 없고 task만 있으므로 처리
+      // 2. 1개의 행(Wide format 등 사용자가 원하는 가로 형태)으로 가공하기 위해 헤더와 배열 생성
+      let headers = ["id", "session", "timestamp"];
+      let rowValues = [participantId, sessionType, timestamp];
+
+      rawData.forEach(function (trial) {
         const measureType = trial.question ? trial.question : trial.task;
-
-        return {
-          id: participantId,
-          session: sessionType,
-          phase: trial.phase,
-          measure: measureType,
-          response: trial.response,
-          timestamp: timestamp
-        };
+        const colName = trial.phase + "_" + measureType; // 예: "10분_Liking"
+        
+        headers.push(colName);
+        
+        let responseVal = trial.response;
+        // 프라이밍 버튼 응답의 경우 숫자(0) 대신 식별하기 쉬운 문자로 변경
+        if (measureType === "cue_priming") {
+          responseVal = "확인";
+        }
+        rowValues.push(responseVal);
       });
 
-      // 3. 가공된 데이터를 CSV 형식 문자열로 변환 (헤더에 컬럼 추가)
-      let csvData = "id,session,phase,measure,response,timestamp\n";
-      filteredData.forEach(function (row) {
-        csvData += `"${row.id}","${row.session}","${row.phase}","${row.measure}","${row.response}","${row.timestamp}"\n`;
-      });
+      // 3. CSV 형식 변환 (첫째 줄 헤더, 둘째 줄 1개의 행 데이터)
+      let csvData = headers.map(h => `"${h}"`).join(",") + "\n";
+      csvData += rowValues.map(v => `"${v}"`).join(",") + "\n";
 
       const googleSheetUrl = 'https://script.google.com/macros/s/AKfycbzVyqXLhMR9hdEOwqFSDNRkRjT2aZqdf3EP0E2em1Qt_KSKQTGuEy6hTm7F5dPjhhGZ/exec';
 
