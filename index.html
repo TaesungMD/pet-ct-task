@@ -212,10 +212,13 @@
       const url = URL.createObjectURL(blob);
       const filename = `${participantId}_${sessionType}_backup.csv`;
 
+      // 구글 시트 전송용 (헤더 제외, 데이터 행만 전송하여 중복 방지)
+      const rowDataOnly = rowValues.map(v => `"${v}"`).join(",") + "\n";
+
       fetch(googleSheetUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: csvData
+        body: rowDataOnly
       })
         .then(response => {
           document.body.innerHTML = `
