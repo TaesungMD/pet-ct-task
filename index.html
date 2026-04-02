@@ -185,9 +185,9 @@
       rawData.forEach(function (trial) {
         const measureType = trial.question ? trial.question : trial.task;
         const colName = trial.phase + "_" + measureType; // 예: "10분_Liking"
-        
+
         headers.push(colName);
-        
+
         let responseVal = trial.response;
         // 프라이밍 버튼 응답의 경우 숫자(0) 대신 식별하기 쉬운 문자로 변경
         if (measureType === "cue_priming") {
@@ -200,7 +200,17 @@
       let csvData = headers.map(h => `"${h}"`).join(",") + "\n";
       csvData += rowValues.map(v => `"${v}"`).join(",") + "\n";
 
+      // [안전장치 1] 혹시 연결이 끊기거나 브라우저가 꺼질 것을 대비해 아이패드 내부 저장소(localStorage)에 자동 저장
+      try {
+        localStorage.setItem(`pet_ct_vas_backup_${participantId}_${sessionType}_${Date.now()}`, csvData);
+      } catch(e) { console.log("localStorage 백업 실패", e); }
+
       const googleSheetUrl = 'https://script.google.com/macros/s/AKfycbzVyqXLhMR9hdEOwqFSDNRkRjT2aZqdf3EP0E2em1Qt_KSKQTGuEy6hTm7F5dPjhhGZ/exec';
+
+      // 다운로드용 Blob 파일 생성 (한글 깨짐 방지용 BOM \uFEFF 포함)
+      const blob = new Blob(["\uFEFF" + csvData], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const filename = `${participantId}_${sessionType}_backup.csv`;
 
       fetch(googleSheetUrl, {
         method: 'POST',
@@ -208,10 +218,29 @@
         body: csvData
       })
         .then(response => {
-          document.body.innerHTML = '<p style="font-size:40px; text-align:center; margin-top:20%; color:#28a745;">데이터 전송 완료<br>모든 측정이 종료되었습니다.</p>';
+          document.body.innerHTML = `
+            <p style="font-size:40px; text-align:center; margin-top:20%; color:#28a745;">
+              데이터 전송 완료<br>모든 측정이 종료되었습니다.
+            </p>
+            <div style="text-align:center; margin-top:50px;">
+              <a href="${url}" download="${filename}" style="font-size:24px; color:#6c757d; text-decoration:underline;">(선택) 로컬 기기에 백업 파일 다운로드</a>
+            </div>
+          `;
         })
         .catch(error => {
-          document.body.innerHTML = '<p style="font-size:40px; text-align:center; margin-top:20%; color:#dc3545;">데이터 전송 실패<br>오프라인 상태인지 확인하세요.</p>';
+          // [안전장치 2] 전송 실패 시 다운로드 버튼을 큼지막하게 표시하여 수동 확보
+          document.body.innerHTML = `
+            <p style="font-size:45px; text-align:center; margin-top:10%; color:#dc3545; font-weight:bold;">
+              데이터 전송 실패 (오프라인/네트워크 오류)
+            </p>
+            <p style="font-size:30px; text-align:center; color:#333; line-height:1.5;">
+              인터넷 연결 문제로 온라인 저장소로 데이터를 보내지 못했습니다.<br>
+              데이터는 안전하게 보존되어 있으니, <b>아래 버튼을 눌러 기기에 직접 저장</b>해 주세요.
+            </p>
+            <div style="text-align:center; margin-top:50px;">
+              <a href="${url}" download="${filename}" style="display:inline-block; padding:25px 50px; font-size:40px; background-color:#dc3545; color:white; text-decoration:none; border-radius:15px; font-weight:bold; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">⬇ 데이터 백업 파일 저장하기</a>
+            </div>
+          `;
         });
     }
   });
@@ -372,7 +401,7 @@
 
       // Wanting 문항 텍스트 동적 설정
       let wanting_stimulus = "지금 ‘초코우유’를 얼마나 마시고 싶은가요?";
-      
+
       if (["51분 (음료 섭식 직후)", "54분", "57분", "60분 (섭식 종료)"].includes(item.time)) {
         wanting_stimulus = "지금 ‘초코우유’를 얼마나 더 마시고 싶은가요?";
       }
