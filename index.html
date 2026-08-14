@@ -208,27 +208,6 @@
 <body></body>
 <script src="https://unpkg.com/@jspsych/plugin-survey-html-form@1.0.3"></script>
 <script>
-  // iPadOS Safari 16.4+ 등 Fullscreen API 지원 환경에서 전체화면 요청
-  // (브라우저 정책상 반드시 사용자의 터치/클릭 동작 안에서 호출되어야 함)
-  async function enterFullscreenIfPossible() {
-    const el = document.documentElement;
-
-    if (document.fullscreenElement || document.webkitFullscreenElement) {
-      return;
-    }
-
-    try {
-      if (el.requestFullscreen) {
-        await el.requestFullscreen({ navigationUI: 'hide' });
-      } else if (el.webkitRequestFullscreen) {
-        el.webkitRequestFullscreen();
-      }
-    } catch (err) {
-      // 전체화면이 허용되지 않는 환경에서는 일반 화면으로 계속 진행
-      console.log('전체화면 전환을 사용할 수 없습니다.', err);
-    }
-  }
-
   // 아이패드 당기기 새로고침(Pull-to-refresh) 및 화면 흔들림 완벽 방지
   document.addEventListener('touchmove', function (e) {
     // 슬라이더 바 조작이나, 텍스트 입력 칸 터치 시에는 기본 동작 허용
@@ -350,16 +329,7 @@
       </div>
     `,
     button_label: '설문 시작하기',
-    data: { task: 'participant_info' },
-    on_load: function () {
-      // 전체화면 요청은 사용자 제스처 안에서 실행해야 하므로 시작 버튼 클릭에 연결
-      const startBtn = document.querySelector('#jspsych-survey-html-form input[type="submit"], #jspsych-survey-html-form button[type="submit"], #jspsych-survey-html-form .jspsych-btn, .jspsych-btn');
-      if (startBtn) {
-        startBtn.addEventListener('click', function () {
-          enterFullscreenIfPossible();
-        }, { once: true });
-      }
-    }
+    data: { task: 'participant_info' }
   };
   timeline.push(info_screen);
 
