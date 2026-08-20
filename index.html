@@ -60,6 +60,11 @@
       padding-top: 20vh;
     }
 
+    /* 연구자가 조작하는 첫 등록 화면만 원래 중앙 정렬 */
+    body.participant-info-active .jspsych-content-wrapper {
+      padding-top: 0;
+    }
+
     .jspsych-content {
       font-size: 55px;
       font-weight: bold;
@@ -333,7 +338,15 @@
       </div>
     `,
     button_label: '설문 시작하기',
-    data: { task: 'participant_info' }
+    data: { task: 'participant_info' },
+    on_load: function () {
+      // 첫 화면은 연구자가 조작하므로 화면 중앙에 표시
+      document.body.classList.add('participant-info-active');
+    },
+    on_finish: function () {
+      // 이후 참가자용 화면부터는 다시 아래쪽 정렬 적용
+      document.body.classList.remove('participant-info-active');
+    }
   };
   timeline.push(info_screen);
 
@@ -343,7 +356,7 @@
     { time: "30분", type: "q" }, { time: "40분", type: "q" },
     { time: "50분", type: "q" },
     { time: "50분", type: "cue", skipWait: true },
-    { time: "51분 (음료 섭식 직후)", type: "q" },
+    { time: "51분 (음료 섭식 직후)", type: "q", skipWait: true },
     { time: "54분", type: "q" }, { time: "57분", type: "q" },
     { time: "60분 (섭식 종료)", type: "q" },
     { time: "65분", type: "q" }, { time: "70분", type: "q" },
