@@ -54,6 +54,10 @@
     .jspsych-content-wrapper {
       width: 100%;
       height: 100%;
+
+      /* 전체 실험 내용을 화면 중앙보다 아래쪽(약 60% 지점)에 배치 */
+      box-sizing: border-box;
+      padding-top: 20vh;
     }
 
     .jspsych-content {
@@ -354,7 +358,7 @@
       const wait_screen = {
         type: jsPsychHtmlKeyboardResponse, // buttonResponse 대신 keyboardResponse 사용 (직접 제어하기 위함)
         stimulus: `
-          <div style="position: absolute; top: 30%; left: 50%; transform: translate(-50%, -50%); width: 100%; text-align: center;">
+          <div style="position: absolute; top: 60%; left: 50%; transform: translate(-50%, -50%); width: 100%; text-align: center;">
             <p style="font-size: 45px; color: #888; font-weight: normal; margin-top: 0;">다음 측정 대기 중...</p>
             <p style="font-size: 65px; font-weight: bold; margin-top: 20px; margin-bottom: 60px;">${item.time} 측정</p>
             <button id="long-press-btn" class="researcher-btn" style="padding: 20px 50px; font-size: 40px; font-weight: bold;"><span>시작</span></button>
